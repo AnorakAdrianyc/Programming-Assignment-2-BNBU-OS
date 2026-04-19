@@ -37,25 +37,37 @@ done
 has_venv_support() {
   local tmp_dir
   tmp_dir="$(mktemp -d)"
+  trap 'rm -rf "$tmp_dir"' RETURN
   python3 -m venv "$tmp_dir/venv-test" >/dev/null 2>&1
-  local status=$?
-  rm -rf "$tmp_dir"
-  return "$status"
 }
 
 collect_missing_tools() {
   local missing=()
+
+  add_missing() {
+    local candidate="$1"
+    local item
+    for item in "${missing[@]:-}"; do
+      if [ "$item" = "$candidate" ]; then
+        return 0
+      fi
+    done
+    missing+=("$candidate")
+  }
+
   for cmd in gcc gdb make python3 pip3; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
-      missing+=("$cmd")
+      add_missing "$cmd"
     fi
   done
 
-  if ! command -v python3 >/dev/null 2>&1 || ! has_venv_support; then
-    missing+=("python3-venv")
+  if command -v python3 >/dev/null 2>&1 && ! has_venv_support; then
+    add_missing "python3-venv"
   fi
 
-  printf '%s\n' "${missing[@]}"
+  if [ "${#missing[@]}" -gt 0 ]; then
+    printf '%s\n' "${missing[@]}"
+  fi
 }
 
 run_with_privilege() {
@@ -90,6 +102,7 @@ install_dependencies() {
       run_with_privilege dnf install -y gcc gcc-c++ gdb make python3 python3-pip python3-virtualenv
       ;;
     pacman)
+      # pacman uses "python" package name for Python 3.
       run_with_privilege pacman -Sy --noconfirm base-devel gdb make python python-pip python-virtualenv
       ;;
     zypper)
@@ -105,11 +118,16 @@ install_dependencies() {
   esac
 }
 
-mapfile -t missing_before < <(collect_missing_tools)
-if [ "${#missing_before[@]}" -eq 0 ]; then
+missing_tools=()
+while IFS= read -r dep; do
+  if [ -n "$dep" ]; then
+    missing_tools+=("$dep")
+  fi
+done < <(collect_missing_tools)
+if [ "${#missing_tools[@]}" -eq 0 ]; then
   echo "All required dependencies are already installed."
 elif [ "$CHECK_ONLY" = true ]; then
-  echo "Missing dependencies: ${missing_before[*]}" >&2
+  echo "Missing dependencies: ${missing_tools[*]}" >&2
   exit 1
 else
   if ! package_manager="$(detect_package_manager)"; then
@@ -121,9 +139,20 @@ else
   install_dependencies "$package_manager"
 fi
 
+version_tmp="$(mktemp)"
+trap 'rm -f "$version_tmp"' EXIT
 for cmd in gcc gdb make python3 pip3; do
-  "$cmd" --version | head -n 1
+  if ! "$cmd" --version >"$version_tmp" 2>&1; then
+    echo "Failed to verify $cmd after setup." >&2
+    cat "$version_tmp" >&2
+    exit 1
+  fi
+  head -n 1 "$version_tmp"
 done
-python3 -m venv --help >/dev/null
+
+if ! python3 -m venv --help >/dev/null 2>&1; then
+  echo "Failed to verify python3 venv support after setup." >&2
+  exit 1
+fi
 
 echo "Modular C OS coding environment dependencies are ready."

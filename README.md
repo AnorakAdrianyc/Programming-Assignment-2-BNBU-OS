@@ -1,6 +1,6 @@
 # Programming-Assignment-2-BNBU-OS
 
-A modular, bare-bones coding environment for OS-focused C development with:
+A modular, bare-bones coding environment for OS-focused C development with cross-device dependency setup and Ubuntu Linux C syntax validation support:
 
 - C editor workspace for scheduling/process code
 - Python bridge (`bridge/bridge_server.py`) for analysis integration
