@@ -1,0 +1,2 @@
+# Bridge server (bridge/bridge_server.py) — Ollama HTTP client
+requests>=2.31.0
