@@ -114,6 +114,19 @@ class BridgeHandler(BaseHTTPRequestHandler):
         if self.path == "/cursor/ollama/models":
             self._list_ollama_models()
         else:
+            if self.path in ("/", "/bridge"):
+                self._send_json({
+                    "message": "This endpoint accepts POST requests. Use POST with application/json.",
+                    "example_bridge_post": {"processes": [{"name": "P1", "arrival": 0, "burst": 5}]},
+                    "endpoints": ["/bridge (POST)", "/cursor/validate (POST)", "/cursor/analyze (POST)", "/cursor/suggest (POST)"]
+                })
+                return
+            if self.path.startswith("/cursor"):
+                self._send_json({
+                    "message": "Cursor endpoints accept POST only. Use application/json body.",
+                    "endpoints": ["/cursor/validate", "/cursor/analyze", "/cursor/suggest"]
+                })
+                return
             self._send_json({"error": "not found"}, status=404)
 
     def _list_ollama_models(self):
