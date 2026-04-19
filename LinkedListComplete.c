@@ -1,12 +1,12 @@
 /****************************************************************************
  *                                                                          *
- * Author		:  	                                                        *
+ * Author		: Lam Yuk Cho Adrian                                                   *
  *                                                                          *
- * Studdent ID	: Console mode (command line) program.                      *
+ * Student ID	: v530000086                                                         *
  *                                                                          *
- * Date			:                                             			    *
+ * Date			: 4/19                                           			    *
  *                                                         					*
- * Purpose		:                                                           *
+ * Purpose		: Programming Assignment 2                                                           *
  *                                                         					*
  ****************************************************************************/
 
