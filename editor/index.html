@@ -31,10 +31,24 @@ int main(void) {
       <h2>Python Bridge</h2>
       <textarea id="pythonEditor" spellcheck="false"># bridge/bridge_server.py receives process JSON and returns timeline metrics.</textarea>
       <div class="controls">
-        <button id="analyzeButton">Analyze with Python Bridge</button>
+        <button id="analyzeBridgeButton">Analyze (Bridge)</button>
+        <button id="validateCButton">Validate C</button>
+        <button id="suggestButton">Suggest Processes</button>
         <button id="localButton">Analyze Locally (JS)</button>
       </div>
       <pre id="bridgeOutput" aria-live="polite"></pre>
+    </section>
+
+    <section class="panel">
+      <h2>Ollama Integration</h2>
+      <div class="controls">
+        <select id="ollamaModelSelect">
+          <option value="">Loading models...</option>
+        </select>
+        <button id="ollamaGenerateButton">Generate with Ollama</button>
+      </div>
+      <textarea id="ollamaPrompt" placeholder="Enter your prompt for Ollama..." rows="5"></textarea>
+      <pre id="ollamaOutput" aria-live="polite"></pre>
     </section>
 
     <section class="panel">

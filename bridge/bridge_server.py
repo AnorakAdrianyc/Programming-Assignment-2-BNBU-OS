@@ -3,9 +3,13 @@ import json
 import subprocess
 import tempfile
 import os
+import requests # For Ollama API interaction
+from typing import List, Dict, Any
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 MAX_CONTENT_LENGTH = 100_000
+
+OLLAMA_BASE_URL = "http://localhost:11434"
 
 
 def compute_fcfs(processes):
@@ -93,7 +97,7 @@ class BridgeHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS, GET") # Add GET for Ollama models
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
@@ -102,14 +106,49 @@ class BridgeHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(204)
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS, GET") # Add GET for Ollama models
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
+
+    def do_GET(self):
+        if self.path == "/cursor/ollama/models":
+            self._list_ollama_models()
+        else:
+            self._send_json({"error": "not found"}, status=404)
+
+    def _list_ollama_models(self):
+        try:
+            response = requests.get(f"{OLLAMA_BASE_URL}/api/tags")
+            response.raise_for_status()
+            models_data = response.json().get("models", [])
+            models = [{
+                "name": m["name"]
+            } for m in models_data]
+            self._send_json(models)
+        except requests.exceptions.RequestException as e:
+            self._send_json({"error": f"Failed to fetch Ollama models: {e}"}, status=500)
+
+    def _generate_with_ollama(self, payload):
+        try:
+            model = payload.get("model")
+            prompt = payload.get("prompt")
+            if not model or not prompt:
+                self._send_json({"error": "Model and prompt are required"}, status=400)
+                return
+
+            response = requests.post(f"{OLLAMA_BASE_URL}/api/generate", json={"model": model, "prompt": prompt, "stream": False})
+            response.raise_for_status()
+            self._send_json(response.json())
+        except requests.exceptions.RequestException as e:
+            self._send_json({"error": f"Ollama generation failed: {e}"}, status=500)
+        except Exception as e:
+            self._send_json({"error": str(e)}, status=400)
 
     def do_POST(self):
         try:
             # Simple route dispatch for Cursor integration and existing /bridge endpoint
-            if self.path not in ("/bridge", "/cursor/validate", "/cursor/analyze", "/cursor/suggest"):
+            allowed_paths = ("/bridge", "/cursor/validate", "/cursor/analyze", "/cursor/suggest", "/cursor/ollama/generate")
+            if self.path not in allowed_paths:
                 self._send_json({"error": "not found"}, status=404)
                 return
 
@@ -149,6 +188,10 @@ class BridgeHandler(BaseHTTPRequestHandler):
                     "average_wait_time": avg_wait,
                     "average_turnaround": avg_turnaround
                 })
+                return
+            
+            if self.path == "/cursor/ollama/generate":
+                self._generate_with_ollama(payload)
                 return
         except json.JSONDecodeError:
             self._send_json({"error": "Invalid JSON in request body"}, status=400)
