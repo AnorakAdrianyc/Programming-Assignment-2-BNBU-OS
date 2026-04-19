@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import json
+import subprocess
+import tempfile
+import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 MAX_CONTENT_LENGTH = 100_000
@@ -31,6 +34,59 @@ def compute_fcfs(processes):
     return timeline
 
 
+def validate_c_syntax(code):
+    """Validate C code syntax using local gcc (preferred) or helper script."""
+    tmp = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".c", delete=False) as tf:
+            tf.write(code.encode("utf-8"))
+            tf.flush()
+            tmp = tf.name
+
+        # Try gcc first
+        try:
+            result = subprocess.run(
+                ["gcc", "-fsyntax-only", tmp],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            return {"valid": result.returncode == 0, "errors": result.stderr, "warnings": result.stdout}
+        except FileNotFoundError:
+            # Fallback to provided helper script if gcc not available
+            script_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "scripts", "check_c_syntax.sh"))
+            try:
+                result = subprocess.run(
+                    [script_path, tmp],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                return {"valid": result.returncode == 0, "errors": result.stderr, "warnings": result.stdout}
+            except Exception as e:
+                return {"valid": False, "errors": str(e)}
+    except Exception as e:
+        return {"valid": False, "errors": str(e)}
+    finally:
+        if tmp and os.path.exists(tmp):
+            try:
+                os.unlink(tmp)
+            except Exception:
+                pass
+
+
+def analyze_scheduling_code(code):
+    """Simple heuristics to detect scheduling algorithm patterns in C source."""
+    lower = code.lower()
+    return {
+        "fcfs": "enqueue_process(" in code,
+        "sjf": "shortest" in lower or "sjf" in lower,
+        "round_robin": "time_quantum" in lower or "quantum" in lower or "round_robin" in lower,
+        "priority": "priority" in lower,
+        "has_processes": "enqueue_process(" in code,
+    }
+
+
 class BridgeHandler(BaseHTTPRequestHandler):
     def _send_json(self, payload, status=200):
         body = json.dumps(payload).encode("utf-8")
@@ -51,11 +107,12 @@ class BridgeHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
-        if self.path != "/bridge":
-            self._send_json({"error": "not found"}, status=404)
-            return
-
         try:
+            # Simple route dispatch for Cursor integration and existing /bridge endpoint
+            if self.path not in ("/bridge", "/cursor/validate", "/cursor/analyze", "/cursor/suggest"):
+                self._send_json({"error": "not found"}, status=404)
+                return
+
             content_length = int(self.headers.get("Content-Length", "0"))
             if content_length > MAX_CONTENT_LENGTH:
                 self._send_json({"error": "payload too large"}, status=413)
@@ -63,8 +120,36 @@ class BridgeHandler(BaseHTTPRequestHandler):
 
             raw = self.rfile.read(content_length)
             payload = json.loads(raw.decode("utf-8") if raw else "{}")
-            processes = payload.get("processes", [])
-            self._send_json({"timeline": compute_fcfs(processes), "source": "python-bridge"})
+
+            if self.path == "/bridge":
+                processes = payload.get("processes", [])
+                self._send_json({"timeline": compute_fcfs(processes), "source": "python-bridge"})
+                return
+
+            if self.path == "/cursor/validate":
+                code = payload.get("code", "")
+                result = validate_c_syntax(code)
+                self._send_json(result)
+                return
+
+            if self.path == "/cursor/analyze":
+                code = payload.get("code", "")
+                patterns = analyze_scheduling_code(code)
+                self._send_json({"patterns": patterns, "code_length": len(code)})
+                return
+
+            if self.path == "/cursor/suggest":
+                processes = payload.get("processes", [])
+                timeline = compute_fcfs(processes)
+                avg_wait = sum(p["wait"] for p in timeline) / len(timeline) if timeline else 0
+                avg_turnaround = sum(p["turnaround"] for p in timeline) / len(timeline) if timeline else 0
+                self._send_json({
+                    "suggested_algorithm": "FCFS",
+                    "timeline": timeline,
+                    "average_wait_time": avg_wait,
+                    "average_turnaround": avg_turnaround
+                })
+                return
         except json.JSONDecodeError:
             self._send_json({"error": "Invalid JSON in request body"}, status=400)
         except Exception as exc:
