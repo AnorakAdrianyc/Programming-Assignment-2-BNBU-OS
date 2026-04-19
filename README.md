@@ -33,3 +33,19 @@ python3 bridge/bridge_server.py
 
 Then open `http://127.0.0.1:8080`.
 The editor calls `http://127.0.0.1:8000/bridge` for Python-backed analysis (with JS fallback).
+
+## Use the modular editor environment
+
+1. Start both services:
+   - Bridge server: `python3 bridge/bridge_server.py`
+   - Editor server: `./scripts/run_editor.sh`
+2. Open `http://127.0.0.1:8080`.
+3. In **C Editor (OS-focused)**, add or edit lines in this format:
+   - `enqueue_process("P1", 3, 0);`
+4. Click **Analyze with Python Bridge** to send parsed processes to `POST /bridge`.
+   - If the bridge is unavailable, the editor automatically falls back to local JS FCFS computation.
+5. Or click **Analyze Locally (JS)** to run FCFS directly in the browser.
+6. Read results in:
+   - **Python Bridge** output panel (JSON response)
+   - **Process & Timeline Visualization** section (canvas timeline + metrics table)
+7. Use **Frontend Editors (HTML / CSS / JS)** panes to prototype visualization markup/styles/scripts while testing scheduling inputs.
