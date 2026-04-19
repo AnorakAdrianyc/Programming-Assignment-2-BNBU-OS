@@ -1,6 +1,6 @@
 # Programming-Assignment-2-BNBU-OS
 
-A modular, bare-bones Ubuntu-oriented coding environment for OS-focused C development with:
+A modular, bare-bones coding environment for OS-focused C development with:
 
 - C editor workspace for scheduling/process code
 - Python bridge (`bridge/bridge_server.py`) for analysis integration
@@ -10,7 +10,8 @@ A modular, bare-bones Ubuntu-oriented coding environment for OS-focused C develo
 
 - `editor/` - minimal web editor UI (`index.html`, `style.css`, `app.js`)
 - `bridge/` - Python HTTP bridge endpoint for scheduling timeline data
-- `scripts/setup_ubuntu_env.sh` - installs Ubuntu dependencies for C + Python workflow
+- `scripts/setup_env.sh` - installs dependencies for C + Python workflow across supported package managers
+- `scripts/setup_ubuntu_env.sh` - compatibility wrapper that calls `scripts/setup_env.sh`
 - `scripts/run_editor.sh` - runs the editor server (use bridge server separately)
 - `scripts/check_c_syntax.sh` - checks C syntax on Ubuntu with `gcc -fsyntax-only`
 - `.github/workflows/copilot-setup-steps.yml` - preinstalls Ubuntu tools in Copilot cloud agent
@@ -18,10 +19,35 @@ A modular, bare-bones Ubuntu-oriented coding environment for OS-focused C develo
 ## Run locally
 
 ```bash
-chmod +x scripts/setup_ubuntu_env.sh scripts/run_editor.sh scripts/check_c_syntax.sh
-./scripts/setup_ubuntu_env.sh
+chmod +x scripts/setup_env.sh scripts/setup_ubuntu_env.sh scripts/run_editor.sh scripts/check_c_syntax.sh
+./scripts/setup_env.sh
 python3 bridge/bridge_server.py
 ./scripts/run_editor.sh
+```
+
+### Modular dependency setup (cross-device)
+
+`scripts/setup_env.sh` auto-detects and uses one of these package managers:
+
+- `apt-get` (Debian/Ubuntu)
+- `dnf` (Fedora/RHEL)
+- `pacman` (Arch Linux)
+- `zypper` (openSUSE)
+- `brew` (macOS/Linuxbrew)
+
+Required tools are consistent on all supported systems:
+
+- `gcc`
+- `gdb`
+- `make`
+- `python3`
+- `pip3`
+- Python `venv` support
+
+Check-only mode (no install):
+
+```bash
+./scripts/setup_env.sh --check-only
 ```
 
 ## Check C syntax (Ubuntu Linux)

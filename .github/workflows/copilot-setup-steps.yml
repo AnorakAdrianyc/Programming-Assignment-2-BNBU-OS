@@ -16,7 +16,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v5
-      - name: Install Ubuntu C and Python tooling
+      - name: Install C and Python tooling
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential gdb make python3 python3-venv python3-pip
+          chmod +x scripts/setup_env.sh
+          ./scripts/setup_env.sh
