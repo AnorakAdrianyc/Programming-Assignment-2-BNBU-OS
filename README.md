@@ -12,15 +12,23 @@ A modular, bare-bones Ubuntu-oriented coding environment for OS-focused C develo
 - `bridge/` - Python HTTP bridge endpoint for scheduling timeline data
 - `scripts/setup_ubuntu_env.sh` - installs Ubuntu dependencies for C + Python workflow
 - `scripts/run_editor.sh` - runs the editor server (use bridge server separately)
+- `scripts/check_c_syntax.sh` - checks C syntax on Ubuntu with `gcc -fsyntax-only`
 - `.github/workflows/copilot-setup-steps.yml` - preinstalls Ubuntu tools in Copilot cloud agent
 
 ## Run locally
 
 ```bash
-chmod +x scripts/setup_ubuntu_env.sh scripts/run_editor.sh
+chmod +x scripts/setup_ubuntu_env.sh scripts/run_editor.sh scripts/check_c_syntax.sh
 ./scripts/setup_ubuntu_env.sh
 python3 bridge/bridge_server.py
 ./scripts/run_editor.sh
+```
+
+## Check C syntax (Ubuntu Linux)
+
+```bash
+./scripts/check_c_syntax.sh path/to/file.c
+./scripts/check_c_syntax.sh src/a.c src/b.c
 ```
 
 Then open `http://127.0.0.1:8080`.
