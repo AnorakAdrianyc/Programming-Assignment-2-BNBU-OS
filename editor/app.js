@@ -70,12 +70,13 @@ async function analyzeWithBridge() {
       body: JSON.stringify({ processes })
     });
 
-    if (!response.ok) throw new Error(`Bridge error: ${response.status}`);
+    if (!response.ok) throw new Error(`Bridge error: ${response.status} ${response.statusText}`);
     const data = await response.json();
     bridgeOutput.textContent = JSON.stringify(data, null, 2);
     render(data.timeline || []);
-  } catch {
-    const fallback = { timeline: computeFcfs(processes), source: "js-fallback" };
+  } catch (error) {
+    console.error("Bridge request failed:", error);
+    const fallback = { timeline: computeFcfs(processes), source: "local-js" };
     bridgeOutput.textContent = JSON.stringify(fallback, null, 2);
     render(fallback.timeline);
   }

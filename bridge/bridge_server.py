@@ -2,6 +2,8 @@
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
+MAX_CONTENT_LENGTH = 100_000
+
 
 def compute_fcfs(processes):
     ordered = sorted(processes, key=lambda p: p.get("arrival", 0))
@@ -54,10 +56,17 @@ class BridgeHandler(BaseHTTPRequestHandler):
             return
 
         try:
-            raw = self.rfile.read(int(self.headers.get("Content-Length", "0")))
-            payload = json.loads(raw.decode("utf-8") or "{}")
+            content_length = int(self.headers.get("Content-Length", "0"))
+            if content_length > MAX_CONTENT_LENGTH:
+                self._send_json({"error": "payload too large"}, status=413)
+                return
+
+            raw = self.rfile.read(content_length)
+            payload = json.loads(raw.decode("utf-8") if raw else "{}")
             processes = payload.get("processes", [])
             self._send_json({"timeline": compute_fcfs(processes), "source": "python-bridge"})
+        except json.JSONDecodeError:
+            self._send_json({"error": "Invalid JSON in request body"}, status=400)
         except Exception as exc:
             self._send_json({"error": str(exc)}, status=400)
 
