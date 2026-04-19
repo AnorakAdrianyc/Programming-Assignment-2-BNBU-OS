@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OS C Editor Environment</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Bare-Bones Ubuntu C OS Editor</h1>
+    <p>Edit C, bridge to Python analysis, and visualize process scheduling data.</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>C Editor (OS-focused)</h2>
+      <textarea id="cEditor" spellcheck="false">#include <stdio.h>
+
+int main(void) {
+    enqueue_process("P1", 3, 0);
+    enqueue_process("P2", 2, 1);
+    enqueue_process("P3", 1, 2);
+    return 0;
+}
+</textarea>
+      <small>Use enqueue_process("name", burst, arrival); lines to feed the visualization.</small>
+    </section>
+
+    <section class="panel">
+      <h2>Python Bridge</h2>
+      <textarea id="pythonEditor" spellcheck="false"># bridge/bridge_server.py receives process JSON and returns timeline metrics.</textarea>
+      <div class="controls">
+        <button id="analyzeButton">Analyze with Python Bridge</button>
+        <button id="localButton">Analyze Locally (JS)</button>
+      </div>
+      <pre id="bridgeOutput" aria-live="polite"></pre>
+    </section>
+
+    <section class="panel">
+      <h2>Frontend Editors (HTML / CSS / JS)</h2>
+      <div class="split">
+        <textarea id="htmlEditor" spellcheck="false"><div id="viz">Visualization area</div></textarea>
+        <textarea id="cssEditor" spellcheck="false">#viz { padding: 8px; border: 1px dashed #5f6a7d; }</textarea>
+        <textarea id="jsEditor" spellcheck="false">console.log("Frontend visualization hooks active.");</textarea>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Process & Timeline Visualization</h2>
+      <canvas id="timeline" width="920" height="130"></canvas>
+      <table>
+        <thead>
+          <tr><th>Process</th><th>Arrival</th><th>Burst</th><th>Wait</th><th>Turnaround</th></tr>
+        </thead>
+        <tbody id="processTable"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
