@@ -122,7 +122,7 @@ typedef struct Process {
     int pid;
     int burst_time;
     int remaining_time;
-    int priority;           // Optional for Task 1, used by Task 2.
+    int priority;           // Used by Task 2; Task 1 can store a dummy value (for example 0).
     struct Process *next;
 } Process;
 
