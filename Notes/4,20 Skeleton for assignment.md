@@ -61,7 +61,7 @@ Task 2 is like Task 1, using Multilevel feedback queue for CPU scheduling with m
 - [ ] There are at most 5 queues (`Q1` to `Q5`), and each queue contains processes with the corresponding priority.
 - [ ] Priority 5 queue uses FCFS; other queues use FCFS + RR.
 - [ ] User inputs RR quantum.
-- [ ] If a process cannot finish during the given quantum, increase its priority number by 1 and move it to the end of the corresponding queue (if it would go beyond `5`, keep it at `5`, i.e., in `Q5`).
+- [ ] If a process cannot finish during the given quantum, increase its priority number by 1 (maximum `5`) and move it to the end of the corresponding queue.
 - [ ] Assume all processes arrive at time 0.
 
 ### Example
