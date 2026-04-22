@@ -28,6 +28,7 @@ typedef struct Queue {
 Queue* initQueue() {
     Queue *q = (Queue*)malloc(sizeof(Queue));
     q->front = q->rear = NULL;
+    printf("[DEBUG] initQueue: created queue at %p\n", (void*)q);
     return q;
 }
 
@@ -37,6 +38,8 @@ void enterQueue(Queue *q, int pid, int burst, int remaining) {
     new_p->burst_time = burst;
     new_p->remaining_time = remaining;
     new_p->next = NULL;
+    printf("[DEBUG] enterQueue: q=%p pid=%d burst=%d remaining=%d\n",
+           (void*)q, pid, burst, remaining);
 
     if (q->rear == NULL) {
         q->front = q->rear = new_p;
@@ -53,6 +56,8 @@ Process* depQueue(Queue *q) {
     Process *temp = q->front;
     q->front = q->front->next;
     if (q->front == NULL) q->rear = NULL;
+    printf("[DEBUG] depQueue: q=%p pid=%d remaining=%d\n",
+           (void*)q, temp->pid, temp->remaining_time);
     return temp;
 }
 
@@ -68,6 +73,7 @@ int main() {
         printf("\nEnter a task number (1 or 2) or 0 to exit: ");
         int taskNo = 0;
         scanf("%d", &taskNo);
+        printf("[DEBUG] main: selected task=%d\n", taskNo);
         switch (taskNo) {
             case 0: exit(0);
             case 1: runTask1(); break;
@@ -82,6 +88,7 @@ void runTask1() {
 
     printf("Enter the number of processes to schedule: ");
     scanf("%d", &numProcesses);
+    printf("[DEBUG] runTask1: numProcesses=%d\n", numProcesses);
 
     Queue *q1 = initQueue();
     Queue *q2 = initQueue();
@@ -91,6 +98,7 @@ void runTask1() {
         int burst;
         printf("Enter the burst time of P%d: ", i);
         scanf("%d", &burst);
+        printf("[DEBUG] runTask1: enqueue P%d burst=%d into Q1\n", i, burst);
         enterQueue(q1, i, burst, burst);
     }
 
@@ -109,9 +117,12 @@ void runTask1() {
             first = 0;
 
             if (p->remaining_time <= quantum1) {
+                printf("[DEBUG] runTask1: P%d finished in Q1\n", p->pid);
                 free(p);
             } else {
                 p->remaining_time -= quantum1;
+                printf("[DEBUG] runTask1: P%d demoted to Q2 remaining=%d\n",
+                       p->pid, p->remaining_time);
                 enterQueue(q2, p->pid, p->burst_time, p->remaining_time);
                 free(p);
             }
@@ -125,9 +136,12 @@ void runTask1() {
             first = 0;
 
             if (p->remaining_time <= quantum2) {
+                printf("[DEBUG] runTask1: P%d finished in Q2\n", p->pid);
                 free(p);
             } else {
                 p->remaining_time -= quantum2;
+                printf("[DEBUG] runTask1: P%d moved to Q3 remaining=%d\n",
+                       p->pid, p->remaining_time);
                 enterQueue(q3, p->pid, p->burst_time, p->remaining_time);
                 free(p);
             }
@@ -152,15 +166,19 @@ void runTask2() {
 
     printf("Enter the quantum for Q1, Q2, Q3, and Q4: ");
     scanf("%d %d %d %d", &quantums[0], &quantums[1], &quantums[2], &quantums[3]);
+    printf("[DEBUG] runTask2: input quantums=%d,%d,%d,%d\n",
+           quantums[0], quantums[1], quantums[2], quantums[3]);
     // Validate quantums to prevent infinite loops / TLE (per assignment robustness)
     for (int i = 0; i < 4; i++) {
         if (quantums[i] <= 0) {
             quantums[i] = 1;  // default to safe positive value as per PDF intent
+            printf("[DEBUG] runTask2: corrected quantum[%d] to 1\n", i);
         }
     }
 
     printf("Enter the number of processes to schedule: ");
     scanf("%d", &numProcesses);
+    printf("[DEBUG] runTask2: numProcesses=%d\n", numProcesses);
 
     Queue *queues[5];
     int priorities[100] = {0};
@@ -177,6 +195,8 @@ void runTask2() {
 
         if (priority < 1) priority = 1;
         if (priority > 5) priority = 5;
+        printf("[DEBUG] runTask2: enqueue P%d burst=%d priority=%d\n",
+               i, burst, priority);
 
         priorities[i] = priority;
         enterQueue(queues[priority - 1], i, burst, burst);
@@ -211,9 +231,11 @@ void runTask2() {
                 first = 0;
 
                 if (prio == 4) {
+                    printf("[DEBUG] runTask2: P%d finished in Q5 (FCFS)\n", currentPid);
                     free(p);
                 } else {
                     if (p->remaining_time <= quantums[prio]) {
+                        printf("[DEBUG] runTask2: P%d finished in Q%d\n", currentPid, prio + 1);
                         free(p);
                     } else {
                         p->remaining_time -= quantums[prio];
@@ -223,6 +245,8 @@ void runTask2() {
                             newPriority++;
                             priorities[currentPid] = newPriority;
                         }
+                        printf("[DEBUG] runTask2: P%d re-queued to Q%d remaining=%d\n",
+                               currentPid, newPriority, p->remaining_time);
 
                         enterQueue(queues[newPriority - 1], currentPid,
                                  p->burst_time, p->remaining_time);
