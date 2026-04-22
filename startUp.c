@@ -146,13 +146,18 @@ void runTask1() {
 
     printf("\n");
 }
-
 void runTask2() {
     int quantums[4];
     int numProcesses;
 
     printf("Enter the quantum for Q1, Q2, Q3, and Q4: ");
     scanf("%d %d %d %d", &quantums[0], &quantums[1], &quantums[2], &quantums[3]);
+    // Validate quantums to prevent infinite loops / TLE (per assignment robustness)
+    for (int i = 0; i < 4; i++) {
+        if (quantums[i] <= 0) {
+            quantums[i] = 1;  // default to safe positive value as per PDF intent
+        }
+    }
 
     printf("Enter the number of processes to schedule: ");
     scanf("%d", &numProcesses);
@@ -167,7 +172,8 @@ void runTask2() {
     for (int i = 1; i <= numProcesses; i++) {
         int burst, priority;
         printf("Enter the burst time and priority of P%d: ", i);
-        scanf("%d,%d", &burst, &priority);
+        // Fixed formatting per PDF example (accepts "24,1" or "24, 1") and to_fix2.md notes
+        scanf(" %d ,%d", &burst, &priority);
 
         if (priority < 1) priority = 1;
         if (priority > 5) priority = 5;
