@@ -139,3 +139,47 @@ Check-only mode (no install):
 ### Optional: Ollama (local LLM)
 
 Endpoints such as `GET /cursor/ollama/models` and `POST /cursor/ollama/generate` expect [Ollama](https://ollama.com/) running at `http://localhost:11434` (default). Install Ollama separately and pull a model; otherwise those routes will fail while FCFS and C validation endpoints still work.
+
+## Cross-Device Module (`cross_device/`)
+
+This branch introduces a **cross-device AI integration module** designed to work with both **Cursor IDE** and **Visual Studio Code**.
+
+### Features
+
+- **Unified Bridge Client**: `BridgeClient` class provides consistent API access to `bridge_server.py` from any IDE.
+- **Ollama Integration**: Seamless access to your local models (`mistral-nemo:latest`, `qwen3-vl:8b`, etc.).
+- **IDE Agnostic**: Works in Cursor's web editor (`editor/app.js`) and can be used in VS Code extensions or Python scripts.
+- **Settings Synchronization**: Placeholder for cross-IDE configuration sync.
+
+### Usage
+
+```python
+from cross_device.bridge_client import BridgeClient, get_client
+
+# Simple usage
+client = get_client()
+
+# C Code Analysis
+result = client.analyze_code('''#include <stdio.h>
+int main() {
+    enqueue_process("P1", 5, 0);
+    return 0;
+}''')
+print(result)
+
+# Ollama Generation
+response = client.generate_with_ollama(
+    "Explain First-Come-First-Served scheduling algorithm for OS assignment",
+    model="mistral-nemo:latest"
+)
+print(response)
+```
+
+### Integration with https://github.com/AnorakAdrianyc/BNBU-AI-integrated-learning-and-tasks
+
+This module is designed to be portable and can be integrated into the AI learning and tasks repository for:
+- Cross-IDE AI assistance
+- Consistent local model usage across devices
+- Shared context and prompt engineering for educational tasks
+
+See `cross_device/bridge_client.py` for full API documentation.
